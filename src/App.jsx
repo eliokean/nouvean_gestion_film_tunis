@@ -1,9 +1,12 @@
 import { useState } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
-import './App.css'
+// import './App.css'
 
 import DashboardDocTunis from './templates/user_templates/dashboard'
+import PlanningPage from './templates/user_templates/planning'
+import FilmsPage from './templates/user_templates/film'
+import ResultatsPage from './templates/user_templates/resultat'
 
 
 function App() {
@@ -13,6 +16,9 @@ function App() {
     <>
       <div>
         <DashboardDocTunis />
+        <PlanningPage />
+        <FilmsPage />
+        <ResultatsPage />
         <a href="https://vite.dev" target="_blank">
           <img src={viteLogo} className="logo" alt="Vite logo" />
         </a>
