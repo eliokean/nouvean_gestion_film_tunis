@@ -7,7 +7,7 @@ const JuryNav = () => (
     <a href="/jury/films-a-noter" className="text-gray-700 hover:text-red-600 transition">
       Films à Noter
     </a>
-    <a href="/jury/mes-notes" className="text-gray-700 hover:text-red-600 transition">
+    <a href="/president-jury/notes" className="text-gray-700 hover:text-red-600 transition">
       Mes Notes
     </a>
     <a href="/planning" className="text-gray-700 hover:text-red-600 transition">

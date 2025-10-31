@@ -57,8 +57,6 @@ export default function PlanningPage() {
     }
   ];
 
-  const userEmail = 'utilisateur@doc-tunis.com';
-
   // Génération du calendrier
   const generateCalendar = () => {
     const year = currentDate.getFullYear();
@@ -103,60 +101,6 @@ export default function PlanningPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-md sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center">
-            <div className="w-16 h-16 bg-red-600 rounded-lg flex items-center justify-center text-white font-bold text-xl">
-              DT
-            </div>
-          </div>
-
-          <nav className="hidden md:flex space-x-8">
-            <a href="/dashboard" className="text-gray-700 hover:text-red-600 transition">Accueil</a>
-            <a href="/film" className="text-gray-700 hover:text-red-600 transition">Films</a>
-            <a href="/planning" className="text-red-600 font-semibold border-b-2 border-red-600 pb-1">Planning</a>
-            <a href="/resultats" className="text-gray-700 hover:text-red-600 transition">Résultats</a>
-          </nav>
-
-          <div className="hidden lg:flex items-center space-x-2">
-            <input
-              type="text"
-              placeholder="Rechercher un film"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600"
-            />
-            <button className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition flex items-center gap-2">
-              <Search className="w-4 h-4" /> Rechercher
-            </button>
-          </div>
-
-          <div className="relative">
-            <button 
-              onClick={() => setShowDropdown(!showDropdown)}
-              className="flex items-center space-x-2 hover:bg-gray-100 px-3 py-2 rounded-lg transition"
-            >
-              <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
-                <User className="w-6 h-6 text-gray-600" />
-              </div>
-              <span className="hidden md:block text-sm text-gray-700">{userEmail}</span>
-              <ChevronDown className={`w-4 h-4 transition-transform ${showDropdown ? 'rotate-180' : ''}`} />
-            </button>
-
-            {showDropdown && (
-              <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2">
-                <a href="/profil" className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-gray-700">
-                  <UserCircle className="w-4 h-4" /> Profil
-                </a>
-                <a href="/logout" className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-gray-700">
-                  <LogOut className="w-4 h-4" /> Déconnexion
-                </a>
-              </div>
-            )}
-          </div>
-        </div>
-      </header>
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">

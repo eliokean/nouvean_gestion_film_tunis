@@ -55,19 +55,28 @@ function App() {
 
           {/* Administration */}
           <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
+            <Route path="/admin/dashboard" element={<Dashboard />} />
+            <Route path="/admin/planning" element={<PlanningPage />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/admin/films" element={<AdminFilmsPage />} />
+            <Route path="/admin/resultats" element={<ResultsPage />} />
           </Route>
 
           {/* Jury */}
           <Route element={<ProtectedRoute allowedRoles={['jury']} />}>
-            <Route path="/jury" element={<Dashboard />} />
+            <Route path="/jury/dashboard" element={<Dashboard />} />
+            <Route path="/jury/films" element={<FilmsPage />} />
+            <Route path="/jury/planning" element={<PlanningPage />} />
+            <Route path="/jury/resultats" element={<ResultsPage />} />
             <Route path="/jury/notes" element={<NoteJuryPage />} />
           </Route>
 
           {/* Président du Jury */}
           <Route element={<ProtectedRoute allowedRoles={['president-jury']} />}>
             <Route path="/president-jury" element={<Dashboard />} />
+            <Route path="/president-jury/films" element={<FilmsPage />} />
+            <Route path="/president-jury/planning" element={<PlanningPage />} />
+            <Route path="/president-jury/resultats" element={<ResultsPage />} />
             <Route path="/president-jury/notes" element={<JuryPresidentPage />} />
           </Route>
 
