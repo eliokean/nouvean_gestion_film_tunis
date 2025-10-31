@@ -12,7 +12,7 @@ import PlanningPage from './templates/user_templates/planning'
 import ResultsPage from './templates/user_templates/resultat'
 
 // Pages Admin / Jury / Président
-import Admin from './templates/Admin/admin'
+import Admin from './templates/admin/admin'
 import AdminFilmsPage from './templates/admin/admin_film'
 import NoteJuryPage from './templates/jury_templates/note'
 import JuryPresidentPage from './templates/president_jury_templates/president_note'
