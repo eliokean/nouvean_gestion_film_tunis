@@ -1,0 +1,38 @@
+// templates/layout/hooks/useauth.js
+import { useState, useEffect } from 'react'
+
+export const useAuth = () => {
+  const [user, setUser] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    // Pour debug, mets un utilisateur par défaut
+    const defaultUser = {
+      name: 'Test User',
+      email: 'test@example.com',
+      role: 'public' // Change ce rôle pour tester
+    }
+    
+    const savedUser = localStorage.getItem('festival_user')
+    if (savedUser) {
+      setUser(JSON.parse(savedUser))
+    } else {
+      setUser(defaultUser)
+    }
+    setLoading(false)
+    
+    console.log('Auth loaded:', defaultUser)
+  }, [])
+
+  const login = (userData) => {
+    setUser(userData)
+    localStorage.setItem('festival_user', JSON.stringify(userData))
+  }
+
+  const logout = () => {
+    setUser(null)
+    localStorage.removeItem('festival_user')
+  }
+
+  return { user, loading, login, logout, setUser }
+}

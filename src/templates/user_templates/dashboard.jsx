@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, User, ChevronDown, LogOut, UserCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 
-export default function DashboardDocTunis() {
+export default function Dashboard() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [showDropdown, setShowDropdown] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
