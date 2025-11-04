@@ -4,6 +4,9 @@ import { Routes, Route } from 'react-router-dom'
 import { useAuth } from "./templates/layout/hooks/useauth";
 import Header from './templates/layout/header'
 import LoadingSpinner from './templates/UI/loadingspinner'
+import AccueilPublicPage from './templates/accueil';
+import { useLocation } from "react-router-dom";
+
 
 // Pages utilisateur
 import Dashboard from './templates/user_templates/dashboard'
@@ -21,29 +24,46 @@ import JuryPresidentPage from './templates/president_jury_templates/president_no
 import ProtectedRoute from './templates/Auth/ProtectedRoute'
 import PublicOnlyRoute from './templates/Auth/PublicOnlyRoute'
 import InscriptionPage from './templates/Auth/inscription'
+import ConnexionPage from './templates/Auth/connexion';
 
 const Login = () => <div className="container mx-auto px-4 py-8">Page de Connexion</div>
 const Register = () => <div className="container mx-auto px-4 py-8">Page d'Inscription</div>
 
-function App() {
-  const { user, loading } = useAuth()
 
-  if (loading || !user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner size="large" />
-        <span className="ml-4">Chargement...</span>
-      </div>
-    )
-  }
+
+
+
+
+function App() {
+  // Liste des routes où la navbar ne doit pas apparaître
+  const location = useLocation();
+  const hideHeaderRoutes = ["/", "/connexion", "/inscription"];
+  const shouldHideHeader = hideHeaderRoutes.includes(location.pathname);
+  // const { user, loading } = useAuth()
+
+  // if (loading || !user) {
+  //   return (
+  //     <div className="min-h-screen flex items-center justify-center">
+  //       <LoadingSpinner size="large" />
+  //       <span className="ml-4">Chargement...</span>
+  //     </div>
+  //   )
+  // }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
+      {!shouldHideHeader && <Header />}
       <main>
+         <Routes>
+            <Route path="/" element={<AccueilPublicPage />} />
+            <Route path="/connexion" element={<ConnexionPage />} />
+            <Route path="/inscription" element={<InscriptionPage />} />
+         </Routes>
+        
         <Routes>
           {/* Routes Publiques */}
-          <Route path="/" element={<InscriptionPage />} />
+          
+          <Route path="/inscription" element={<InscriptionPage />} />
           <Route path="/films" element={<FilmsPage />} />
           <Route path="/planning" element={<PlanningPage />} />
           <Route path="/resultats" element={<ResultsPage />} />
