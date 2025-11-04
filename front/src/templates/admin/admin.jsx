@@ -1,14 +1,22 @@
-import React, { useState } from 'react';
-import { Search, User, ChevronDown, LogOut, UserCircle, Users, Shield, FileText, Download, Plus, X, Edit, Trash2, Film, TrendingUp, Calendar, Award } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Search, Shield, TrendingUp, Film, Calendar, Users, Award, Plus, Download, X, Edit, Trash2 } from 'lucide-react';
 
 export default function AdminPage() {
-  const [showDropdown, setShowDropdown] = useState(false);
+  const [utilisateurs, setUtilisateurs] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [showUserModal, setShowUserModal] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [selectedJury, setSelectedJury] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Données de démonstration
+  const [newUser, setNewUser] = useState({
+    nom: '',
+    prenom: '',
+    email: '',
+    role: 'Visiteur'
+  });
+
   const stats = {
     total: 45,
     responsable_inspection: 2,
@@ -21,17 +29,6 @@ export default function AdminPage() {
     projections_total: 24
   };
 
-  const utilisateurs = [
-    { id: 1, nom: 'Dupont', prenom: 'Jean', role: 'Responsable_Inspection', email: 'jean.dupont@doc.tn' },
-    { id: 2, nom: 'Martin', prenom: 'Marie', role: 'Responsable_Production', email: 'marie.martin@doc.tn' },
-    { id: 3, nom: 'Bernard', prenom: 'Pierre', role: 'President_du_Jury', email: 'pierre.bernard@doc.tn' },
-    { id: 4, nom: 'Dubois', prenom: 'Sophie', role: 'Jury', email: 'sophie.dubois@doc.tn' },
-    { id: 5, nom: 'Lambert', prenom: 'Lucas', role: 'Jury', email: 'lucas.lambert@doc.tn' },
-    { id: 6, nom: 'Leroy', prenom: 'Emma', role: 'Visiteur', email: 'emma.leroy@doc.tn' },
-    { id: 7, nom: 'Moreau', prenom: 'Thomas', role: 'Visiteur', email: 'thomas.moreau@doc.tn' },
-    { id: 8, nom: 'Simon', prenom: 'Camille', role: 'Jury', email: 'camille.simon@doc.tn' }
-  ];
-
   const films = [
     { id: 1, titre: 'Terre des Hommes' },
     { id: 2, titre: 'Horizons Perdus' },
@@ -40,17 +37,103 @@ export default function AdminPage() {
     { id: 5, titre: 'Échos du Désert' }
   ];
 
-  const userEmail = 'admin@doc-tunis.com';
+  const roles = [
+    { value: 'Visiteur', label: 'Visiteur', unique: false },
+    { value: 'Responsable_Production', label: 'Production', unique: true },
+    { value: 'Responsable_Inspection', label: 'Inspection', unique: true },
+    { value: 'President_du_Jury', label: 'Président', unique: true },
+    { value: 'Jury', label: 'Jury', unique: false }
+  ];
 
-  const handleRoleChange = (userId, newRole) => {
-    if (newRole === 'Responsable_Production' || newRole === 'Responsable_Inspection' || newRole === 'President_du_Jury') {
-      if (!confirm('Ce rôle est unique. Si un autre utilisateur possède déjà ce rôle, il sera modifié. Voulez-vous continuer ?')) {
-        return;
+  useEffect(() => {
+    fetchUtilisateurs();
+  }, []);
+
+  const fetchUtilisateurs = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('http://localhost:8000/api/users', {
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Erreur lors du chargement des utilisateurs');
+      }
+      
+      const data = await response.json();
+      setUtilisateurs(data);
+      setError(null);
+    } catch (err) {
+      console.error('Erreur:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRoleChange = async (userId, newRole) => {
+    const roleInfo = roles.find(r => r.value === newRole);
+    
+    if (roleInfo.unique) {
+      const existingUser = utilisateurs.find(u => u.role === newRole && u.id !== userId);
+      if (existingUser) {
+        if (!window.confirm(`Ce rôle est unique. ${existingUser.prenom} ${existingUser.nom} possède déjà ce rôle. Voulez-vous le remplacer ?`)) {
+          return;
+        }
       }
     }
-    
-    console.log(`Mise à jour du rôle de l'utilisateur ${userId} vers ${newRole}`);
-    alert('Rôle mis à jour avec succès !');
+
+    try {
+      const response = await fetch(`http://localhost:8000/api/users/${userId}/role`, {
+        method: 'PUT',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ role: newRole })
+      });
+
+      if (!response.ok) {
+        throw new Error('Erreur lors de la mise à jour du rôle');
+      }
+
+      setUtilisateurs(prev => prev.map(u => 
+        u.id === userId ? { ...u, role: newRole } : u
+      ));
+      
+      alert('Rôle mis à jour avec succès !');
+    } catch (err) {
+      console.error('Erreur:', err);
+      alert('Erreur lors de la mise à jour du rôle');
+    }
+  };
+
+  const handleDeleteUser = async (userId) => {
+    if (!window.confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:8000/api/users/${userId}`, {
+        method: 'DELETE',
+        headers: {
+          'Accept': 'application/json',
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Erreur lors de la suppression');
+      }
+
+      setUtilisateurs(prev => prev.filter(u => u.id !== userId));
+      alert('Utilisateur supprimé avec succès !');
+    } catch (err) {
+      console.error('Erreur:', err);
+      alert('Erreur lors de la suppression');
+    }
   };
 
   const handleAssignFilm = (jury) => {
@@ -59,33 +142,80 @@ export default function AdminPage() {
   };
 
   const handleExportCSV = () => {
-    alert('Export CSV en cours...');
+    const csvContent = [
+      ['ID', 'Prénom', 'Nom', 'Email', 'Rôle'],
+      ...utilisateurs.map(u => [u.id, u.prenom, u.nom, u.email || '', u.role])
+    ].map(row => row.join(',')).join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `utilisateurs_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
   };
 
-  const handleSubmitUser = (e) => {
-    e.preventDefault();
-    alert('Utilisateur ajouté avec succès !');
-    setShowUserModal(false);
+  const handleSubmitUser = async () => {
+    try {
+      const response = await fetch('http://localhost:8000/api/users', {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newUser)
+      });
+
+      if (!response.ok) {
+        throw new Error('Erreur lors de la création de l\'utilisateur');
+      }
+
+      const data = await response.json();
+      setUtilisateurs(prev => [...prev, data]);
+      setShowUserModal(false);
+      setNewUser({ nom: '', prenom: '', email: '', role: 'Visiteur' });
+      alert('Utilisateur ajouté avec succès !');
+    } catch (err) {
+      console.error('Erreur:', err);
+      alert('Erreur lors de l\'ajout de l\'utilisateur');
+    }
   };
 
-  const handleSubmitAssign = (e) => {
-    e.preventDefault();
+  const handleSubmitAssign = () => {
     alert('Film assigné avec succès !');
     setShowAssignModal(false);
   };
 
+  const filteredUsers = utilisateurs.filter(user =>
+    user.nom?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    user.prenom?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    user.email?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Chargement...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
-
-      {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
-        {/* Titre */}
         <div className="flex items-center gap-3 mb-8">
           <Shield className="w-10 h-10 text-red-600" />
           <h1 className="text-4xl font-bold text-gray-900">Gestion des Utilisateurs</h1>
         </div>
 
-        {/* Dashboard Statistiques Générales */}
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-6">
+            {error}
+          </div>
+        )}
+
         <div className="bg-gradient-to-r from-red-600 to-red-700 rounded-2xl p-6 mb-8 text-white shadow-xl">
           <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
             <TrendingUp className="w-7 h-7" />
@@ -123,74 +253,37 @@ export default function AdminPage() {
           </div>
         </div>
 
-        {/* Statistiques Utilisateurs */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition">
-            <div className="flex items-center justify-between mb-4">
-              <Users className="w-8 h-8 text-blue-600" />
-              <span className="text-3xl font-bold text-gray-900">{stats.total}</span>
-            </div>
-            <h3 className="text-sm font-semibold text-gray-600">Total Utilisateurs</h3>
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="w-full md:w-1/2 relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Rechercher un utilisateur..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600"
+            />
           </div>
-
-          <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition">
-            <div className="flex items-center justify-between mb-4">
-              <Shield className="w-8 h-8 text-green-600" />
-              <span className="text-3xl font-bold text-gray-900">{stats.responsable_inspection}</span>
-            </div>
-            <h3 className="text-sm font-semibold text-gray-600">Resp. Inspection</h3>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition">
-            <div className="flex items-center justify-between mb-4">
-              <Film className="w-8 h-8 text-purple-600" />
-              <span className="text-3xl font-bold text-gray-900">{stats.responsable_production}</span>
-            </div>
-            <h3 className="text-sm font-semibold text-gray-600">Resp. Production</h3>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition">
-            <div className="flex items-center justify-between mb-4">
-              <Award className="w-8 h-8 text-yellow-600" />
-              <span className="text-3xl font-bold text-gray-900">{stats.jury}</span>
-            </div>
-            <h3 className="text-sm font-semibold text-gray-600">Membres Jury</h3>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setShowUserModal(true)}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition flex items-center gap-2 font-semibold"
+            >
+              <Plus className="w-5 h-5" /> Ajouter
+            </button>
+            <button
+              onClick={handleExportCSV}
+              className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-800 transition flex items-center gap-2 font-semibold"
+            >
+              <Download className="w-5 h-5" /> Export CSV
+            </button>
           </div>
         </div>
 
-        {/* Barre d'actions */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="w-full md:w-1/2">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Rechercher un utilisateur..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600"
-                />
-              </div>
-            </div>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowUserModal(true)}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition flex items-center gap-2 font-semibold"
-              >
-                <Plus className="w-5 h-5" /> Ajouter
-              </button>
-              <button
-                onClick={handleExportCSV}
-                className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-800 transition flex items-center gap-2 font-semibold"
-              >
-                <Download className="w-5 h-5" /> Export CSV
-              </button>
-            </div>
-          </div>
+        <div className="mb-4 text-gray-600">
+          <span className="font-semibold">{filteredUsers.length}</span> utilisateur{filteredUsers.length > 1 ? 's' : ''} trouvé{filteredUsers.length > 1 ? 's' : ''}
         </div>
 
-        {/* Tableau des utilisateurs */}
         <div className="bg-white rounded-xl shadow-lg overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -208,86 +301,98 @@ export default function AdminPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {utilisateurs.filter(user => 
-                  user.nom.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                  user.prenom.toLowerCase().includes(searchQuery.toLowerCase())
-                ).map((user) => (
-                  <tr key={user.id} className="hover:bg-gray-50 transition">
-                    <td className="px-6 py-4 text-sm text-gray-900">{user.id}</td>
-                    <td className="px-6 py-4 text-sm text-gray-900 font-medium">{user.prenom}</td>
-                    <td className="px-6 py-4 text-sm text-gray-900">{user.nom}</td>
-                    <td className="px-6 py-4 text-center">
-                      <input
-                        type="radio"
-                        name={`role-${user.id}`}
-                        checked={user.role === 'Visiteur'}
-                        onChange={() => handleRoleChange(user.id, 'Visiteur')}
-                        className="w-4 h-4 text-red-600 cursor-pointer"
-                      />
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <input
-                        type="radio"
-                        name={`role-${user.id}`}
-                        checked={user.role === 'Responsable_Production'}
-                        onChange={() => handleRoleChange(user.id, 'Responsable_Production')}
-                        className="w-4 h-4 text-red-600 cursor-pointer"
-                      />
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <input
-                        type="radio"
-                        name={`role-${user.id}`}
-                        checked={user.role === 'Responsable_Inspection'}
-                        onChange={() => handleRoleChange(user.id, 'Responsable_Inspection')}
-                        className="w-4 h-4 text-red-600 cursor-pointer"
-                      />
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <input
-                        type="radio"
-                        name={`role-${user.id}`}
-                        checked={user.role === 'President_du_Jury'}
-                        onChange={() => handleRoleChange(user.id, 'President_du_Jury')}
-                        className="w-4 h-4 text-red-600 cursor-pointer"
-                      />
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <input
-                        type="radio"
-                        name={`role-${user.id}`}
-                        checked={user.role === 'Jury'}
-                        onChange={() => handleRoleChange(user.id, 'Jury')}
-                        className="w-4 h-4 text-red-600 cursor-pointer"
-                      />
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center justify-center gap-2">
-                        <button className="p-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition">
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition">
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                        {(user.role === 'Jury' || user.role === 'President_du_Jury') && (
-                          <button
-                            onClick={() => handleAssignFilm(user)}
-                            className="p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
-                          >
-                            <Film className="w-4 h-4" />
-                          </button>
-                        )}
-                      </div>
+                {filteredUsers.length === 0 ? (
+                  <tr>
+                    <td colSpan="9" className="px-6 py-8 text-center text-gray-500">
+                      Aucun utilisateur trouvé
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  filteredUsers.map(user => (
+                    <tr key={user.id} className="hover:bg-gray-50 transition">
+                      <td className="px-6 py-4 text-sm text-gray-900">{user.id}</td>
+                      <td className="px-6 py-4 text-sm text-gray-900 font-medium">{user.prenom}</td>
+                      <td className="px-6 py-4 text-sm text-gray-900">{user.nom}</td>
+                      <td className="px-6 py-4 text-center">
+                        <input
+                          type="radio"
+                          name={`role-${user.id}`}
+                          checked={user.role === 'Visiteur'}
+                          onChange={() => handleRoleChange(user.id, 'Visiteur')}
+                          className="w-4 h-4 text-red-600 cursor-pointer"
+                        />
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <input
+                          type="radio"
+                          name={`role-${user.id}`}
+                          checked={user.role === 'Responsable_Production'}
+                          onChange={() => handleRoleChange(user.id, 'Responsable_Production')}
+                          className="w-4 h-4 text-red-600 cursor-pointer"
+                        />
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <input
+                          type="radio"
+                          name={`role-${user.id}`}
+                          checked={user.role === 'Responsable_Inspection'}
+                          onChange={() => handleRoleChange(user.id, 'Responsable_Inspection')}
+                          className="w-4 h-4 text-red-600 cursor-pointer"
+                        />
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <input
+                          type="radio"
+                          name={`role-${user.id}`}
+                          checked={user.role === 'President_du_Jury'}
+                          onChange={() => handleRoleChange(user.id, 'President_du_Jury')}
+                          className="w-4 h-4 text-red-600 cursor-pointer"
+                        />
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <input
+                          type="radio"
+                          name={`role-${user.id}`}
+                          checked={user.role === 'Jury'}
+                          onChange={() => handleRoleChange(user.id, 'Jury')}
+                          className="w-4 h-4 text-red-600 cursor-pointer"
+                        />
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center justify-center gap-2">
+                          <button 
+                            className="p-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition" 
+                            title="Modifier"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button 
+                            onClick={() => handleDeleteUser(user.id)}
+                            className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition" 
+                            title="Supprimer"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                          {(user.role === 'Jury' || user.role === 'President_du_Jury') && (
+                            <button
+                              onClick={() => handleAssignFilm(user)}
+                              className="p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
+                              title="Assigner un film"
+                            >
+                              <Film className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
         </div>
       </main>
 
-      {/* Modal Ajouter Utilisateur */}
       {showUserModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl max-w-md w-full">
@@ -300,13 +405,14 @@ export default function AdminPage() {
                 <X className="w-5 h-5" />
               </button>
             </div>
-
             <div className="p-6 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Nom</label>
                 <input
                   type="text"
                   required
+                  value={newUser.nom}
+                  onChange={(e) => setNewUser({...newUser, nom: e.target.value})}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600"
                   placeholder="Nom de famille"
                 />
@@ -316,6 +422,8 @@ export default function AdminPage() {
                 <input
                   type="text"
                   required
+                  value={newUser.prenom}
+                  onChange={(e) => setNewUser({...newUser, prenom: e.target.value})}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600"
                   placeholder="Prénom"
                 />
@@ -325,13 +433,19 @@ export default function AdminPage() {
                 <input
                   type="email"
                   required
+                  value={newUser.email}
+                  onChange={(e) => setNewUser({...newUser, email: e.target.value})}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600"
                   placeholder="email@example.com"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Rôle</label>
-                <select className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600 bg-white">
+                <select 
+                  value={newUser.role}
+                  onChange={(e) => setNewUser({...newUser, role: e.target.value})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600 bg-white"
+                >
                   <option value="Visiteur">Visiteur</option>
                   <option value="Responsable_Inspection">Responsable d'inspection</option>
                   <option value="Responsable_Production">Responsable de production</option>
@@ -360,7 +474,6 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* Modal Assigner Film */}
       {showAssignModal && selectedJury && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl max-w-md w-full">
@@ -373,7 +486,6 @@ export default function AdminPage() {
                 <X className="w-5 h-5" />
               </button>
             </div>
-
             <div className="p-6 space-y-4">
               <div className="bg-gray-50 rounded-lg p-4">
                 <p className="text-sm text-gray-600 mb-1">Jury sélectionné</p>
@@ -408,7 +520,6 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* Footer */}
       <footer className="bg-gray-900 text-white py-8 mt-16">
         <div className="container mx-auto px-4 text-center">
           <p className="text-gray-400">&copy; 2024 Doc à Tunis. Tous droits réservés.</p>
